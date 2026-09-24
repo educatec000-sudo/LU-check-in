@@ -1,0 +1,23 @@
+{
+  "name": "Lu Cerimonialista \u2014 Check-in",
+  "short_name": "Lu Check-in",
+  "id": "./",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#241612",
+  "theme_color": "#4a3226",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
