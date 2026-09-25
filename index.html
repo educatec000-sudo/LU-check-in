@@ -501,10 +501,10 @@ function dlgEvent(id){
 function saveEvent(id){
   const name=$('#f-name').value.trim();
   if(!name)return toast('Dê um nome ao evento','bad');
-  if(id){const e=getEvent(id);Object.assign(e,{name,date:$('#f-date').value,time:$('#f-time').value,location:$('#f-loc').value.trim(),description:$('#f-desc').value.trim()});save();closeModal();toast('Evento atualizado','ok');route()}
-  else{const e={id:uid('evt'),name,date:$('#f-date').value,time:$('#f-time').value,location:$('#f-loc').value.trim(),description:$('#f-desc').value.trim(),secret:genCode(new Set()),createdAt:Date.now(),attendees:[]};DB.events.unshift(e);save();closeModal();toast('Evento criado! Agora importe a lista 🎉','ok');location.hash='#/evento/'+e.id}
+  if(id){const e=getEvent(id);Object.assign(e,{name,date:$('#f-date').value,time:$('#f-time').value,location:$('#f-loc').value.trim(),description:$('#f-desc').value.trim()});e.updatedAt=Date.now();save();try{if(typeof pushNow==='function')pushNow()}catch(e){}closeModal();toast('Evento atualizado','ok');route()}
+  else{const e={id:uid('evt'),name,date:$('#f-date').value,time:$('#f-time').value,location:$('#f-loc').value.trim(),description:$('#f-desc').value.trim(),secret:genCode(new Set()),createdAt:Date.now(),updatedAt:Date.now(),attendees:[]};DB.events.unshift(e);save();closeModal();toast('Evento criado! Agora importe a lista 🎉','ok');location.hash='#/evento/'+e.id}
 }
-function delEvent(id){const e=getEvent(id);confirmDlg('Excluir evento',`Excluir <b>${esc(e.name)}</b> e todos os ${e.attendees.length} convidados? Essa ação não pode ser desfeita.`,'Excluir',()=>{DB.deletedEvents[id]=Date.now();Object.keys(DB.deletedAtts).forEach(k=>{if(k.indexOf(id+':')===0)delete DB.deletedAtts[k]});DB.events=DB.events.filter(x=>x.id!==id);save();toast('Evento excluído');if((location.hash||'').includes(id))location.hash='#/';else route()})}
+function delEvent(id){const e=getEvent(id);confirmDlg('Excluir evento',`Excluir <b>${esc(e.name)}</b> e todos os ${e.attendees.length} convidados? Essa ação não pode ser desfeita.`,'Excluir',()=>{DB.deletedEvents[id]=Date.now();Object.keys(DB.deletedAtts).forEach(k=>{if(k.indexOf(id+':')===0)delete DB.deletedAtts[k]});DB.events=DB.events.filter(x=>x.id!==id);save();try{if(typeof pushNow==='function')pushNow()}catch(e){}toast('Evento excluído');if((location.hash||'').includes(id))location.hash='#/';else route()})}
 /* ================= EVENTO ================= */
 let EV=null,FILTER='all',QUERY='';
 function viewEvent(id){
@@ -584,11 +584,11 @@ function renderAttRows(){
 }
 function toggleAtt(code,toPresent){
   const a=getAtt(EV,code);if(!a)return;
-  a.status=toPresent?'present':'pending';a.checkedInAt=toPresent?Date.now():null;
-  save();renderEvent();toast(toPresent?`✓ ${a.name} presente!`:'Presença desfeita',toPresent?'ok':'');
+  a.status=toPresent?'present':'pending';a.checkedInAt=toPresent?Date.now():null;a.statusAt=Date.now();
+  save();try{if(typeof pushNow==='function')pushNow()}catch(e){}renderEvent();toast(toPresent?`✓ ${a.name} presente!`:'Presença desfeita',toPresent?'ok':'');
 }
-function delAtt(code){const a=getAtt(EV,code);confirmDlg('Remover convidado',`Remover <b>${esc(a.name)}</b> da lista?`,'Remover',()=>{DB.deletedAtts[EV.id+':'+code]=Date.now();EV.attendees=EV.attendees.filter(x=>x.code!==code);save();renderEvent();toast('Removido')})}
-function resetCheckin(){if(!EV.attendees.some(a=>a.status==='present'))return toast('Ninguém presente ainda');confirmDlg('Zerar presenças','Marcar todos como pendentes novamente?','Zerar',()=>{EV.attendees.forEach(a=>{a.status='pending';a.checkedInAt=null});save();renderEvent();toast('Presenças zeradas')})}
+function delAtt(code){const a=getAtt(EV,code);confirmDlg('Remover convidado',`Remover <b>${esc(a.name)}</b> da lista?`,'Remover',()=>{DB.deletedAtts[EV.id+':'+code]=Date.now();EV.attendees=EV.attendees.filter(x=>x.code!==code);save();try{if(typeof pushNow==='function')pushNow()}catch(e){}renderEvent();toast('Removido')})}
+function resetCheckin(){if(!EV.attendees.some(a=>a.status==='present'))return toast('Ninguém presente ainda');confirmDlg('Zerar presenças','Marcar todos como pendentes novamente?','Zerar',()=>{EV.attendees.forEach(a=>{if(a.status==='present'){a.status='pending';a.checkedInAt=null;a.statusAt=Date.now()}});save();try{if(typeof pushNow==='function')pushNow()}catch(e){}renderEvent();toast('Presenças zeradas')})}
 const NOMES_BR=["Adão", "Afrânio", "Aléxia", "Amélia", "Amâncio", "Anésia", "Ângela", "Ângelo", "Antônia", "Antônio", "Apolônia", "Apolônio", "Aristóteles", "Assunção", "Átila", "Áurea", "Aurélio", "Araújo", "Ávila", "Bárbara", "Benício", "Betânia", "Brás", "Cármen", "Cássia", "Cássio", "Cecília", "Célia", "Célio", "César", "Cézar", "Cícera", "Cícero", "Cíntia", "Cláudia", "Cláudio", "Cléber", "Clélia", "Cléo", "Conceição", "Creuza", "Cristóvão", "Damião", "Débora", "Décio", "Dulce", "Éder", "Edésia", "Édgar", "Edílson", "Édipo", "Eládio", "Élida", "Élio", "Elísio", "Eloá", "Eloísa", "Emília", "Emílio", "Ênio", "Érica", "Érico", "Érika", "Estêvão", "Éverton", "Fábio", "Fabrícia", "Fabrício", "Fátima", "Felícia", "Felício", "Félix", "Flávia", "Flávio", "Florêncio", "França", "Galvão", "Geísa", "Genésio", "Gérson", "Gláucia", "Gláucio", "Gleice", "Glicério", "Gonçalo", "Graça", "Guimarães", "Hélio", "Heloísa", "Hermínio", "Hortência", "Ícaro", "Inácio", "Inês", "Ione", "Íris", "Isaías", "Ítalo", "Ivânia", "Janaína", "Jéferson", "Jerônimo", "Jéssica", "João", "Jordão", "José", "Josué", "Jucélia", "Júlia", "Júlio", "Júnior", "Kaká", "Kátia", "Kauã", "Kauê", "Késsia", "Laís", "Lázaro", "Lêda", "Léo", "Letícia", "Lídia", "Lílian", "Lívia", "Lúcia", "Lúcio", "Luís", "Luísa", "Luzia", "Magalhães", "Magnólia", "Maitê", "Márcia", "Márcio", "Mário", "Marília", "Maurício", "Mélanie", "Mércia", "Moisés", "Mônica", "Nádia", "Natália", "Nazaré", "Nenê", "Nícolas", "Noêmia", "Núbia", "Olívia", "Óscar", "Otávio", "Otília", "Pâmela", "Patrícia", "Plínio", "Régis", "Rogéria", "Rogério", "Romário", "Rômulo", "Rosália", "Rosângela", "Rúbia", "Salomão", "Sérgio", "Silvério", "Sílvia", "Sílvio", "Simão", "Sônia", "Stéfany", "Suélen", "Taís", "Tânia", "Tarcísio", "Tomás", "Túlio", "Úrsula", "Valéria", "Valquíria", "Vânia", "Verônica", "Vinícius", "Vítor", "Vitória", "Walquíria", "Wanderléia", "Xênia", "Yara", "Zélia", "Zélio", "Câmara", "Camões", "Côrtes", "Falcão", "Góes", "Góis", "Leitão", "Lobão", "Macêdo", "Maranhão", "Paixão", "Rêgo", "Sá", "Simões", "Tomé", "Família", "São", "Sebastião"];
 let NOMES_SET=null;
 let NOMES_COMUM=null;
@@ -621,8 +621,8 @@ function fixAccents(){
   if(!EV||!EV.attendees.length)return toast('Lista vazia','bad');
   const fix=s=>{s=String(s||'');if(!s)return s;try{const r=decodeURIComponent(escape(s));if(r!==s&&r.indexOf('\uFFFD')<0&&/[\u00C0-\u00FF]/.test(r))return r}catch(e){}return s};
   let n=0,m=0;SMART_GUESSED=[];
-  for(const a of EV.attendees){for(const f of ['name','email','category','table','notes']){const v=fix(a[f]);if(v!==a[f]){a[f]=v;n++}}
-    const sn=smartFixName(a.name);if(sn!==a.name){a.name=sn;m++}}
+  for(const a of EV.attendees){for(const f of ['name','email','category','table','notes']){const v=fix(a[f]);if(v!==a[f]){a[f]=v;a.updatedAt=Date.now();n++}}
+    const sn=smartFixName(a.name);if(sn!==a.name){a.name=sn;a.updatedAt=Date.now();m++}}
   if(n+m)save();
   const broken=EV.attendees.filter(a=>(a.name||'').indexOf('\ufffd')>=0);
   renderEvent();
@@ -642,7 +642,7 @@ function dlgReviewNames(list){
 function insFixChar(ch){const inp=window._lastFixInput;if(!inp||!document.contains(inp)){toast('Toque num nome primeiro');return}const s=(inp.selectionStart==null?inp.value.length:inp.selectionStart),e=(inp.selectionEnd==null?s:inp.selectionEnd);inp.value=inp.value.slice(0,s)+ch+inp.value.slice(e);inp.focus();try{inp.setSelectionRange(s+1,s+1)}catch(_){}}
 function saveFixedNames(){
   let n=0;
-  $$('#fixlist input').forEach(inp=>{const a=getAtt(EV,inp.dataset.code);const v=inp.value.trim();if(a&&v&&v!==a.name){a.name=v;n++}});
+  $$('#fixlist input').forEach(inp=>{const a=getAtt(EV,inp.dataset.code);const v=inp.value.trim();if(a&&v&&v!==a.name){a.name=v;a.updatedAt=Date.now();n++}});
   closeModal();
   if(n){save();renderEvent();toast(`✅ ${n} nome(s) corrigido(s)!`,'ok')}
 }
@@ -668,8 +668,8 @@ function saveAtt(code){
   const name=$('#a-name').value.trim();
   if(!name)return toast('Informe o nome','bad');
   const data={name,phone:$('#a-phone').value.trim(),email:$('#a-email').value.trim(),category:$('#a-cat').value.trim(),table:$('#a-table').value.trim(),notes:$('#a-notes').value.trim()};
-  if(code){Object.assign(getAtt(EV,code),data);save();closeModal();renderEvent();toast('Atualizado','ok')}
-  else{const ex=new Set(EV.attendees.map(a=>a.code));EV.attendees.push({id:uid('att'),code:genCode(ex),status:'pending',checkedInAt:null,...data});save();closeModal();renderEvent();toast('Adicionado! QR gerado 🎟️','ok')}
+  if(code){const _a=getAtt(EV,code);Object.assign(_a,data);_a.updatedAt=Date.now();save();try{if(typeof pushNow==='function')pushNow()}catch(e){}closeModal();renderEvent();toast('Atualizado','ok')}
+  else{const ex=new Set(EV.attendees.map(a=>a.code));EV.attendees.push({id:uid('att'),code:genCode(ex),status:'pending',checkedInAt:null,statusAt:Date.now(),updatedAt:Date.now(),...data});save();try{if(typeof pushNow==='function')pushNow()}catch(e){}closeModal();renderEvent();toast('Adicionado! QR gerado 🎟️','ok')}
 }
 /* ---- banner instalar como app ---- */
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();window._deferredPrompt=e;const h=location.hash||'#/';if(h==='#/'||h==='#')route()});
@@ -965,7 +965,7 @@ function onScan(text){
       const mesa2=a.table||p.table||'';
       box.innerHTML=`<div class="scan-result dup"><h2>⚠️ Já entrou!</h2><p><b style="font-size:20px">${esc(a.name)}</b><br>${esc(a.category||'')} • ${esc(a.code)}</p>${mesa2?`<div style="font-size:30px;font-weight:800;margin:4px 0">🪑 Mesa ${esc(mesa2)}</div>`:''}<p>Entrada registrada às ${fmtDT(a.checkedInAt)}</p></div>`;
       pushRecent(`⚠️ ${a.name} — duplicado`);renderRecent();return}
-    a.status='present';a.checkedInAt=Date.now();save();beep(true);if(navigator.vibrate)navigator.vibrate(80);
+    a.status='present';a.checkedInAt=Date.now();a.statusAt=Date.now();save();try{if(typeof pushNow==='function')pushNow()}catch(e){}beep(true);if(navigator.vibrate)navigator.vibrate(80);
     const mesa=a.table||p.table||'';
     box.innerHTML=`<div class="scan-result ok"><h2>✅ Bem-vindo(a)!</h2><p><b style="font-size:24px">${esc(a.name)}</b><br>${esc(a.category||'Convidado')} • <span class="code">${esc(a.code)}</span></p>${mesa?`<div style="font-size:34px;font-weight:800;margin:4px 0">🪑 Mesa ${esc(mesa)}</div>`:`<div class="hint">sem mesa definida</div>`}<p>Entrada: ${fmtDT(a.checkedInAt)}</p></div>`;
     pushRecent(`✅ ${a.name}${mesa?' — Mesa '+mesa:''}`);renderRecent();
@@ -1094,10 +1094,22 @@ function cloudOnMsg(m){
   CLOUD._seen[d.mid]=1;
   if(Object.keys(CLOUD._seen).length>300)CLOUD._seen={};
   if(d.device===CLOUD.device)return;
-  if(mergeCloud(d)){save();refreshAfterSync()}
+  const mr=mergeCloud(d);
+  if(mr.changed){save();CLOUD._remote=mr;try{refreshAfterSync()}catch(e){}CLOUD._remote=null;cloudToastRemote(mr)}
   CLOUD.lastSync=Date.now();cloudDot();
 }
-function schedulePush(){if(!CLOUD.enabled)return;clearTimeout(CLOUD._pt);CLOUD._pt=setTimeout(()=>mqttPublish(),1500)}
+function schedulePush(){if(!CLOUD.enabled)return;clearTimeout(CLOUD._pt);CLOUD._pt=setTimeout(()=>mqttPublish(),400)}
+function cloudToastRemote(mr){
+  try{
+    const nm=a=>a.slice(0,2).join(', ')+(a.length>2?` +${a.length-2}`:'');
+    if(mr.freshPres&&mr.freshPres.length){toast(`☁️ ${nm(mr.freshPres)} entrou!`,'ok');return}
+    if(mr.freshPend&&mr.freshPend.length){toast(`☁️ ${nm(mr.freshPend)} voltou p/ pendente`);return}
+    if(mr.newEvents&&mr.newEvents.length){toast(`☁️ Novo evento: ${nm(mr.newEvents)}`,'ok');return}
+    if(mr.edited){toast('☁️ Lista atualizada de outro aparelho');return}
+    toast('☁️ Sincronizado');
+  }catch(e){}
+}
+function pushNow(){if(!CLOUD.enabled)return;clearTimeout(CLOUD._pt);try{mqttPublish()}catch(e){}}
 function mqttPublish(){
   if(!CLOUD.enabled)return;
   const c=CLOUD.client;if(!c||!c.connected)return;
@@ -1114,7 +1126,7 @@ function mergeCloud(d){
   const remote=Array.isArray(d.events)?d.events:[];
   const rDelE=(d&&d.deletedEvents)||{}, rDelA=(d&&d.deletedAtts)||{};
   if(!DB.deletedEvents)DB.deletedEvents={}; if(!DB.deletedAtts)DB.deletedAtts={};
-  let changed=false;
+  let changed=false;const freshPres=[],freshPend=[],newEvents=[];let edited=false;
   const now=Date.now(), MONTH=30*24*3600*1000;
   for(const id in rDelE){if(!DB.deletedEvents[id]){DB.deletedEvents[id]=rDelE[id]||now;changed=true}}
   for(const k in rDelA){if(!DB.deletedAtts[k]){DB.deletedAtts[k]=rDelA[k]||now;changed=true}}
@@ -1126,30 +1138,35 @@ function mergeCloud(d){
   for(const re of remote){
     if(!re||DB.deletedEvents[re.id])continue;
     let le=DB.events.find(e=>e.id===re.id);
-    if(!le){const cp=JSON.parse(JSON.stringify(re));cp.attendees=(cp.attendees||[]).filter(a=>!DB.deletedAtts[re.id+':'+a.code]);DB.events.push(cp);changed=true;continue}
+    if(!le){const cp=JSON.parse(JSON.stringify(re));cp.attendees=(cp.attendees||[]).filter(a=>!DB.deletedAtts[re.id+':'+a.code]);DB.events.push(cp);changed=true;if(re.name)newEvents.push(re.name);continue}
     const bl=le.attendees.length;
     le.attendees=le.attendees.filter(a=>!DB.deletedAtts[le.id+':'+a.code]);
     if(le.attendees.length!==bl)changed=true;
+    if((re.updatedAt||0)>(le.updatedAt||0)){for(const f of ['name','date','time','location','description']){if(re[f]!==undefined&&le[f]!==re[f]){le[f]=re[f];changed=true;edited=true}}le.updatedAt=re.updatedAt;}
     for(const ra of (re.attendees||[])){
       if(DB.deletedAtts[le.id+':'+ra.code])continue;
       let la=le.attendees.find(a=>a.code===ra.code);
       if(!la){le.attendees.push(ra);changed=true;continue}
-      if(ra.status==='present'&&la.status!=='present'){la.status='present';la.checkedInAt=ra.checkedInAt||Date.now();changed=true}
-      for(const f of ['name','phone','email','category','table','notes']){if(!la[f]&&ra[f]){la[f]=ra[f];changed=true}}
+      const raT=ra.statusAt||0,laT=la.statusAt||0;
+      if(raT>laT){if(la.status!==ra.status){la.status=ra.status;la.checkedInAt=ra.status==='present'?(ra.checkedInAt||Date.now()):null;changed=true;(ra.status==='present'?freshPres:freshPend).push(ra.name||la.name||'convidado')}la.statusAt=raT;changed=true}
+      else if(raT===laT&&ra.status==='present'&&la.status!=='present'){la.status='present';la.checkedInAt=ra.checkedInAt||Date.now();changed=true;freshPres.push(ra.name||la.name||'convidado')}
+      const raU=ra.updatedAt||0,laU=la.updatedAt||0;
+      if(raU>laU){for(const f of ['name','phone','email','category','table','notes']){if(ra[f]!==undefined&&la[f]!==ra[f]){la[f]=ra[f];changed=true;edited=true}}la.updatedAt=raU}
+      else for(const f of ['name','phone','email','category','table','notes']){if(!la[f]&&ra[f]){la[f]=ra[f];changed=true}}
     }
   }
-  return changed;
+  return{changed:changed,freshPres:freshPres,freshPend:freshPend,newEvents:newEvents,edited:edited};
 }
 function refreshAfterSync(){
   if($('#modal-root')&&$('#modal-root').firstChild)return;
   const h=location.hash||'#/';
   if(h.indexOf('#/evento/')===0&&typeof EV!=='undefined'&&EV){
     if(!getEvent(EV.id)){toast('Este evento foi excluído em outro aparelho');location.hash='#/';return}
-    if(document.activeElement&&(document.activeElement.id==='q'))return;
+    if(document.activeElement&&(document.activeElement.id==='q')){try{const s=stats(EV);const bs=$$('.metrics .stat b');if(bs[0])bs[0].textContent=s.total;if(bs[1])bs[1].textContent=s.present;if(bs[2])bs[2].textContent=s.pending;if(bs[3])bs[3].textContent=s.pct+'%'}catch(e){}try{renderAttRows()}catch(e){}return}
     const q=QUERY,f=FILTER;renderEvent();QUERY=q;FILTER=f;
     const qi=$('#q');if(qi)qi.value=q;renderAttRows();
   }
-  else if(h.indexOf('#/checkin')===0){cloudUpdateScanStats();try{if($('#scanq')&&(($('#scanq').value||$('#scanmesa').value)))scanSearch()}catch(e){}}
+  else if(h.indexOf('#/checkin')===0){cloudUpdateScanStats();try{if(CLOUD._remote&&CLOUD._remote.freshPres)for(const n of CLOUD._remote.freshPres.slice(0,5))pushRecent('☁️ '+n);renderRecent()}catch(e){}try{if($('#scanq'))scanSearch()}catch(e){}}
   else if(h==='#/'||h==='#'||h===''){route()}
 }
 function cloudUpdateScanStats(){
@@ -1172,7 +1189,7 @@ function dlgCloud(){
   const ago=CLOUD.lastSync?Math.floor((Date.now()-CLOUD.lastSync)/1000):-1;
   openModal(`<div class="modal-h"><h3>☁️ Nuvem automática</h3><button class="x" onclick="closeModal()">✕</button></div>
   <div class="modal-b">
-    <p class="hint" style="margin-top:0">Quando há internet, <b>todos os celulares com este app sincronizam sozinhos</b> — sem configurar nada. ✅ A cada entrada confirmada, os outros aparelhos atualizam em segundos.</p>
+    <p class="hint" style="margin-top:0">Quando há internet, <b>todos os celulares com este app sincronizam sozinhos</b> — sem configurar nada. ✅ A cada confirmação, os outros aparelhos atualizam na mesma hora — vale também para desfazer, excluir e editar. ⚡</p>
     <div class="field"><label>Status</label><div>${s==='on'?'<span class="chip ok">☁️ Ligado e sincronizando</span>':s==='try'?'<span class="chip warn">Ligando…</span>':'<span class="chip">Desligado</span>'}</div>
     <div class="hint">Última sincronização: ${ago<0?'ainda não':ago<5?'agora mesmo':ago<60?ago+'s atrás':Math.floor(ago/60)+'min atrás'}</div></div>
     <div class="field"><label class="hint" style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="c-auto" ${CLOUD.enabled?'checked':''} onchange="cloudToggle(this.checked)" style="width:18px;height:18px"> Sincronização automática</label></div>
@@ -1233,7 +1250,7 @@ function confirmByCode(code){
   if(a.status==='present'){beep(false);
     box.innerHTML=`<div class="scan-result dup"><h2>⚠️ Já entrou!</h2><p><b style="font-size:20px">${esc(a.name)}</b></p>${mesa?`<div style="font-size:30px;font-weight:800;margin:4px 0">🪑 Mesa ${esc(mesa)}</div>`:''}<p>Entrada às ${fmtDT(a.checkedInAt)}</p></div>`;
     pushRecent(`⚠️ ${a.name} — duplicado`);renderRecent();return}
-  a.status='present';a.checkedInAt=Date.now();save();beep(true);if(navigator.vibrate)navigator.vibrate(80);
+  a.status='present';a.checkedInAt=Date.now();a.statusAt=Date.now();save();try{if(typeof pushNow==='function')pushNow()}catch(e){}beep(true);if(navigator.vibrate)navigator.vibrate(80);
   box.innerHTML=`<div class="scan-result ok"><h2>✅ Bem-vindo(a)!</h2><p><b style="font-size:24px">${esc(a.name)}</b><br>${esc(a.category||'Convidado')} • <span class="code">${esc(a.code)}</span></p>${mesa?`<div style="font-size:34px;font-weight:800;margin:4px 0">🪑 Mesa ${esc(mesa)}</div>`:`<div class="hint">sem mesa definida</div>`}<p>Entrada: ${fmtDT(a.checkedInAt)}</p></div>`;
   pushRecent(`✅ ${a.name}${mesa?' — Mesa '+mesa:''}`);renderRecent();
   cloudUpdateScanStats();
