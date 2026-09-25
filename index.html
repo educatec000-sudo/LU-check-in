@@ -315,6 +315,9 @@ body{touch-action:pan-y;-webkit-tap-highlight-color:transparent;overscroll-behav
   .sec-head .btn{flex:1;justify-content:center;font-size:13px}
   .scan-head{gap:8px;margin:0 0 10px;padding-bottom:10px}
   .scan-head h2{font-size:17px}
+  .scard{display:flex;flex-direction:column}
+  .scard>b{order:-2}
+  .scard #ssearch{order:-1;margin-bottom:8px;max-height:210px}
 }
 @media(display-mode:standalone){
   .wrap{padding-top:calc(14px + env(safe-area-inset-top))}
@@ -884,9 +887,9 @@ function renderScanner(){
         <div style="display:flex;gap:8px;margin-top:8px"><input id="mcode" placeholder="Ex: K7X9P2" maxlength="10" style="flex:1;border:1px solid var(--line);border-radius:10px;padding:11px;text-transform:uppercase;font-family:monospace;font-weight:700;letter-spacing:2px" onkeydown="if(event.key==='Enter')manualScan()"><button class="btn btn-pri" onclick="manualScan()">Confirmar</button></div>
         <div class="hint">Use quando o celular do convidado estiver sem bateria ou a câmera falhar.</div>
       </div>
-      <div class="card" style="padding:14px;margin-top:10px">
+      <div class="card scard" style="padding:14px;margin-top:10px">
         <b>🔎 Buscar pelo nome (sem QR Code)</b>
-        <div class="ffiltros" style="margin-top:8px"><div><input id="scanq" placeholder="🔎 Nome..." style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px" oninput="scanSearch()"></div><div><select id="scanmesa" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff" onchange="scanSearch()"><option value="">🪑 Mesa...</option></select></div></div>
+        <div class="ffiltros" style="margin-top:8px"><div><input id="scanq" placeholder="🔎 Nome..." enterkeyhint="go" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px" oninput="scanSearch()" onkeydown="return scanEnter(event)"></div><div><select id="scanmesa" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff" onchange="scanSearch()"><option value="">🪑 Mesa...</option></select></div></div>
         <div class="scan-list" id="ssearch" style="margin-top:8px"><div class="hint">Busque pelo nome e/ou escolha a mesa. Toque na 🪑 de um resultado para ver todos da mesma mesa. Mesas completas somem da lista. 🎉</div></div>
       </div>
       <div id="sres"><div class="scan-result">Aponte a câmera para o QR Code do convite.<br><span class="hint">O resultado aparece aqui.</span></div></div>
@@ -1220,6 +1223,7 @@ function scanSearch(){
   if(!res.length){box.innerHTML='<div class="hint">Ninguém encontrado. Ajuste o nome/mesa ou cadastre a pessoa na lista.</div>';return}
   box.innerHTML=res.map(a=>`<div class="scan-item"><b>${esc(a.name)}${a.table?` <button class="chip" style="cursor:pointer;font:inherit" data-m="${esc(a.table)}" onclick="setScanMesa(this.dataset.m)" title="Ver todos desta mesa">🪑 ${esc(a.table)}</button>`:''}<br><span class="hint">${esc(a.category||'')}${a.category?' • ':''}${esc(a.code)}</span></b>${a.status==='present'?'<span class="chip ok">✓ entrou</span>':`<button class="btn btn-sm btn-pri" onclick="confirmByCode('${a.code}')">Confirmar</button>`}</div>`).join('');
 }
+function scanEnter(e){if(e.key!=='Enter')return true;try{e.preventDefault()}catch(_){}const b=$('#ssearch')?$('#ssearch').querySelectorAll('button.btn-pri'):[];if(b.length===1){b[0].click()}else{const qi=$('#scanq');if(qi)qi.blur()}return false}
 function setScanMesa(m){const mi=$('#scanmesa');if(mi){if(![...mi.options].some(o=>o.value===m)){const o=document.createElement('option');o.value=m;o.textContent='🪑 Mesa '+m;mi.appendChild(o)}mi.value=m}const qi=$('#scanq');if(qi)qi.value='';scanSearch()}
 function clearScanMesa(){const mi=$('#scanmesa');if(mi)mi.value='';scanSearch()}
 function confirmByCode(code){
