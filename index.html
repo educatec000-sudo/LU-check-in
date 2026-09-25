@@ -1223,7 +1223,7 @@ function scanSearch(){
   if(!res.length){box.innerHTML='<div class="hint">Ninguém encontrado. Ajuste o nome/mesa ou cadastre a pessoa na lista.</div>';return}
   box.innerHTML=res.map(a=>`<div class="scan-item"><b>${esc(a.name)}${a.table?` <button class="chip" style="cursor:pointer;font:inherit" data-m="${esc(a.table)}" onclick="setScanMesa(this.dataset.m)" title="Ver todos desta mesa">🪑 ${esc(a.table)}</button>`:''}<br><span class="hint">${esc(a.category||'')}${a.category?' • ':''}${esc(a.code)}</span></b>${a.status==='present'?'<span class="chip ok">✓ entrou</span>':`<button class="btn btn-sm btn-pri" onclick="confirmByCode('${a.code}')">Confirmar</button>`}</div>`).join('');
 }
-function scanEnter(e){if(e.key!=='Enter')return true;try{e.preventDefault()}catch(_){}const b=$('#ssearch')?$('#ssearch').querySelectorAll('button.btn-pri'):[];if(b.length===1){b[0].click()}else{const qi=$('#scanq');if(qi)qi.blur()}return false}
+function scanEnter(e){if(e.key!=='Enter')return true;try{e.preventDefault()}catch(_){}const qi=$('#scanq');if(qi){qi.value='';try{qi.blur()}catch(_){}}scanSearch();return false}
 function setScanMesa(m){const mi=$('#scanmesa');if(mi){if(![...mi.options].some(o=>o.value===m)){const o=document.createElement('option');o.value=m;o.textContent='🪑 Mesa '+m;mi.appendChild(o)}mi.value=m}const qi=$('#scanq');if(qi)qi.value='';scanSearch()}
 function clearScanMesa(){const mi=$('#scanmesa');if(mi)mi.value='';scanSearch()}
 function confirmByCode(code){
